@@ -8,16 +8,15 @@ const CodeEditorWindow = ({ onChange, language, code }) => {
   const [theme, setTheme] = useState("vs-dark");
 
   const handleEditorChange = (value) => {
-    console.log("value", value);
     setValue(value);
     onChange("code", value);
   };
   return (
     <div className="overlay rounded-md overflow-hidden w-full h-full shadow-4xl">
       <Editor
-        height="85vh"
+        height="80vh"
         width={`100%`}
-        defaultLanguage={language || "javascript"}
+        language={language || "javascript"}
         value={value}
         theme="vs-dark"
         defaultValue="// some comment"
