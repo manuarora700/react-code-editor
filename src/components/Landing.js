@@ -26,13 +26,40 @@ const COMPILE_STATUSES = {
   RE: "RE",
 };
 
-/*
- 
-       */
+const javascriptDefault = `/**
+* Problem: Binary Search: Search a sorted array for a target value.
+*/
+
+// Time: O(log n)
+const binarySearch = (arr, target) => {
+ return binarySearchHelper(arr, target, 0, arr.length - 1);
+};
+
+const binarySearchHelper = (arr, target, start, end) => {
+ if (start > end) {
+   return false;
+ }
+ let mid = Math.floor((start + end) / 2);
+ if (arr[mid] === target) {
+   return mid;
+ }
+ if (arr[mid] < target) {
+   return binarySearchHelper(arr, target, mid + 1, end);
+ }
+ if (arr[mid] > target) {
+   return binarySearchHelper(arr, target, start, mid - 1);
+ }
+};
+
+const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const target = 5;
+console.log(binarySearch(arr, target));
+`;
 
 const Landing = () => {
-  const [code, setCode] = useState("// Some Comment");
+  const [code, setCode] = useState(javascriptDefault);
   const [output, setOutput] = useState(null);
+  const [customInput, setCustomInput] = useState("");
   const [outputDetails, setOutputDetails] = useState(null);
   const [processing, setProcessing] = useState(null);
   const [theme, setTheme] = useState("cobalt");
@@ -59,10 +86,9 @@ const Landing = () => {
     let formData = {
       lang: language.apiLanguage,
       source: `${code}`,
-      input: "",
       memory_limit: 243232,
       time_limit: 5,
-      // "context": “{‘id’: 213121}”,
+      input: customInput,
       callback: "https://client.com/callback/",
     };
     axios
@@ -94,6 +120,17 @@ const Landing = () => {
       return;
     } else if (status === REQUEST_STATUSES.CODE_COMPILED) {
       console.log("code compiled...", responseData);
+      let compileStatus = responseData?.result?.compile_status;
+      if (compileStatus !== "OK") {
+        // throw error
+        setOutputDetails(responseData?.result);
+        setProcessing(false);
+        return;
+      } else {
+        setTimeout(() => {
+          pingStatusAPI(statusAPI);
+        }, 1000);
+      }
     } else if (status === REQUEST_STATUSES.REQUEST_FAILED) {
       console.log("code failed...", responseData);
       setProcessing(false);
@@ -181,23 +218,6 @@ const Landing = () => {
             styles={customStyles}
             onChange={handleThemeChange}
           />
-          {/* <select
-            id="themeSelector"
-            value={theme}
-            onChange={handleThemeChange}
-          >
-            {["light", "vs-dark"].map((theme) => (
-              <option key={theme} value={theme}>
-                {theme}
-              </option>
-            ))}
-            <option disabled>&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</option>
-            {Object.entries(monacoThemes).map(([themeId, themeName]) => (
-              <option key={themeId} value={themeId}>
-                {themeName}
-              </option>
-            ))}
-          </select> */}
         </div>
       </div>
       <div className="flex flex-row space-x-4 items-start px-4 py-4">
@@ -208,16 +228,6 @@ const Landing = () => {
             language={language?.value}
             theme={theme.value}
           />
-          <button
-            onClick={handleCompile}
-            disabled={!code}
-            className={classnames(
-              "border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white mt-2",
-              !code ? "opacity-50" : ""
-            )}
-          >
-            {processing ? "Processing..." : "Compile and Execute"}
-          </button>
         </div>
 
         <div className="right-container flex flex-shrink-0 w-[30%] flex-col">
@@ -229,7 +239,8 @@ const Landing = () => {
               <>
                 {outputDetails?.run_status?.status !== COMPILE_STATUSES.AC ? (
                   <pre className="px-2 py-1 font-normal text-xs text-red-500">
-                    {outputDetails?.run_status?.stderr}
+                    {outputDetails?.run_status?.stderr ||
+                      outputDetails?.compile_status}
                   </pre>
                 ) : (
                   <pre className="px-2 py-1 font-normal text-xs text-green-500">
@@ -238,6 +249,26 @@ const Landing = () => {
                 )}
               </>
             ) : null}
+          </div>
+          <div className="flex flex-col items-end">
+            <textarea
+              rows="5"
+              onChange={(e) => setCustomInput(e.target.value)}
+              placeholder={`Custom input`}
+              className={classnames(
+                "focus:outline-none w-full border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white mt-2"
+              )}
+            ></textarea>
+            <button
+              onClick={handleCompile}
+              disabled={!code}
+              className={classnames(
+                "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white mt-2 flex-shrink-0",
+                !code ? "opacity-50" : ""
+              )}
+            >
+              {processing ? "Processing..." : "Compile and Execute"}
+            </button>
           </div>
           {outputDetails && (
             <div className="metrics-container mt-4 flex flex-col space-y-2">
