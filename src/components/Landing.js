@@ -8,8 +8,12 @@ import { classnames } from "../utils/general";
 import { languageOptions } from "../constants/languageOptions";
 import { customStyles } from "../constants/customStyles";
 
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import monacoThemes from "monaco-themes/themes/themelist";
 import { defineTheme } from "../lib/defineTheme";
+import useKeyPress from "../hooks/useKeyPress";
 
 const REQUEST_STATUSES = {
   REQUEST_INITIATED: "REQUEST_INITIATED",
@@ -63,13 +67,25 @@ const Landing = () => {
   const [outputDetails, setOutputDetails] = useState(null);
   const [processing, setProcessing] = useState(null);
   const [theme, setTheme] = useState("cobalt");
-  const HACKEREARTH_API = `https://api.hackerearth.com/v4/partner/code-evaluation/submissions/`;
   const [language, setLanguage] = useState(languageOptions[0]);
+
+  const enterPress = useKeyPress("Enter");
+  const ctrlPress = useKeyPress("Control");
+
+  const HACKEREARTH_API = `https://api.hackerearth.com/v4/partner/code-evaluation/submissions/`;
 
   const onSelectChange = (sl) => {
     console.log("selected Option...", sl);
     setLanguage(sl);
   };
+
+  useEffect(() => {
+    if (enterPress && ctrlPress) {
+      console.log("enterPress", enterPress);
+      console.log("ctrlPress", ctrlPress);
+      handleCompile();
+    }
+  }, [ctrlPress, enterPress]);
   const onChange = (action, data) => {
     switch (action) {
       case "code": {
@@ -117,6 +133,7 @@ const Landing = () => {
       setOutputDetails(responseData?.result);
       readFile(responseData?.result?.run_status?.output);
       setProcessing(false);
+      showSuccessToast();
       return;
     } else if (status === REQUEST_STATUSES.CODE_COMPILED) {
       console.log("code compiled...", responseData);
@@ -190,8 +207,31 @@ const Landing = () => {
     );
   }, []);
 
+  const showSuccessToast = (msg) => {
+    toast.success(msg || `Compiled Successfully!`, {
+      position: "top-right",
+      autoClose: 1000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
+  };
+
   return (
     <>
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       <div className="h-4 w-full bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500"></div>
       <div className="flex flex-row">
         <div className="px-4 py-2">
@@ -244,7 +284,7 @@ const Landing = () => {
                   </pre>
                 ) : (
                   <pre className="px-2 py-1 font-normal text-xs text-green-500">
-                    {output}
+                    {`${output}`}
                   </pre>
                 )}
               </>
