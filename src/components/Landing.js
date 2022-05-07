@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import Select from "react-select";
 import Editor from "@monaco-editor/react";
@@ -7,6 +7,9 @@ import axios from "axios";
 import { classnames } from "../utils/general";
 import { languageOptions } from "../constants/languageOptions";
 import { customStyles } from "../constants/customStyles";
+
+import monacoThemes from "monaco-themes/themes/themelist";
+import { defineTheme } from "../lib/defineTheme";
 
 const REQUEST_STATUSES = {
   REQUEST_INITIATED: "REQUEST_INITIATED",
@@ -23,11 +26,16 @@ const COMPILE_STATUSES = {
   RE: "RE",
 };
 
+/*
+ 
+       */
+
 const Landing = () => {
   const [code, setCode] = useState("// Some Comment");
   const [output, setOutput] = useState(null);
   const [outputDetails, setOutputDetails] = useState(null);
   const [processing, setProcessing] = useState(null);
+  const [theme, setTheme] = useState("cobalt");
   const HACKEREARTH_API = `https://api.hackerearth.com/v4/partner/code-evaluation/submissions/`;
   const [language, setLanguage] = useState(languageOptions[0]);
 
@@ -128,17 +136,69 @@ const Landing = () => {
         console.log(error);
       });
   };
+
+  function handleThemeChange(th) {
+    const theme = th;
+    console.log("theme...", theme);
+
+    if (["light", "vs-dark"].includes(theme.value)) {
+      setTheme(theme);
+    } else {
+      defineTheme(theme.value).then((_) => setTheme(theme));
+    }
+  }
+  useEffect(() => {
+    defineTheme("oceanic-next").then((_) =>
+      setTheme({ value: "oceanic-next", label: "Oceanic Next" })
+    );
+  }, []);
+
   return (
     <>
       <div className="h-4 w-full bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500"></div>
-      <div className="px-4 py-2">
-        <Select
-          placeholder={`Filter By Category`}
-          options={languageOptions}
-          styles={customStyles}
-          defaultValue={languageOptions[0]}
-          onChange={(selectedOption) => onSelectChange(selectedOption)}
-        />
+      <div className="flex flex-row">
+        <div className="px-4 py-2">
+          <Select
+            placeholder={`Filter By Category`}
+            options={languageOptions}
+            styles={customStyles}
+            defaultValue={languageOptions[0]}
+            onChange={(selectedOption) => onSelectChange(selectedOption)}
+          />
+        </div>
+        <div className="px-4 py-2">
+          <Select
+            placeholder={`Select Theme`}
+            // options={languageOptions}
+            options={Object.entries(monacoThemes).map(
+              ([themeId, themeName]) => ({
+                label: themeName,
+                value: themeId,
+                key: themeId,
+              })
+            )}
+            value={theme}
+            styles={customStyles}
+            onChange={handleThemeChange}
+          />
+          {/* <select
+            id="themeSelector"
+            value={theme}
+            onChange={handleThemeChange}
+          >
+            {["light", "vs-dark"].map((theme) => (
+              <option key={theme} value={theme}>
+                {theme}
+              </option>
+            ))}
+            <option disabled>&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</option>
+            {Object.entries(monacoThemes).map(([themeId, themeName]) => (
+              <option key={themeId} value={themeId}>
+                {themeName}
+              </option>
+            ))}
+          </select> */}
+        </div>
       </div>
       <div className="flex flex-row space-x-4 items-start px-4 py-4">
         <div className="flex flex-col w-full h-full justify-start items-end">
@@ -146,6 +206,7 @@ const Landing = () => {
             code={code}
             onChange={onChange}
             language={language?.value}
+            theme={theme.value}
           />
           <button
             onClick={handleCompile}
