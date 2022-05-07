@@ -14,6 +14,7 @@ import "react-toastify/dist/ReactToastify.css";
 import monacoThemes from "monaco-themes/themes/themelist";
 import { defineTheme } from "../lib/defineTheme";
 import useKeyPress from "../hooks/useKeyPress";
+import Footer from "./Footer";
 
 const REQUEST_STATUSES = {
   REQUEST_INITIATED: "REQUEST_INITIATED",
@@ -348,6 +349,7 @@ const Landing = () => {
           )}
         </div>
       </div>
+      <Footer />
     </>
   );
 };
