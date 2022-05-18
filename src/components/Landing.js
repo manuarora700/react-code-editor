@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-import ReactDOM from "react-dom";
 import Select from "react-select";
-import Editor from "@monaco-editor/react";
 import CodeEditorWindow from "./CodeEditorWindow";
 import axios from "axios";
 import { classnames } from "../utils/general";
@@ -15,21 +13,6 @@ import monacoThemes from "monaco-themes/themes/themelist";
 import { defineTheme } from "../lib/defineTheme";
 import useKeyPress from "../hooks/useKeyPress";
 import Footer from "./Footer";
-
-const REQUEST_STATUSES = {
-  REQUEST_INITIATED: "REQUEST_INITIATED",
-  REQUEST_QUEUED: "REQUEST_QUEUED",
-  CODE_COMPILED: "CODE_COMPILED",
-  REQUEST_COMPLETED: "REQUEST_COMPLETED",
-  REQUEST_FAILED: "REQUEST_FAILED",
-};
-
-const COMPILE_STATUSES = {
-  AC: "AC",
-  MLE: "MLE",
-  TLE: "TLE",
-  RE: "RE",
-};
 
 const javascriptDefault = `/**
 * Problem: Binary Search: Search a sorted array for a target value.
@@ -63,7 +46,6 @@ console.log(binarySearch(arr, target));
 
 const Landing = () => {
   const [code, setCode] = useState(javascriptDefault);
-  const [output, setOutput] = useState(null);
   const [customInput, setCustomInput] = useState("");
   const [outputDetails, setOutputDetails] = useState(null);
   const [processing, setProcessing] = useState(null);
@@ -72,8 +54,6 @@ const Landing = () => {
 
   const enterPress = useKeyPress("Enter");
   const ctrlPress = useKeyPress("Control");
-
-  const HACKEREARTH_API = `https://api.hackerearth.com/v4/partner/code-evaluation/submissions/`;
 
   const onSelectChange = (sl) => {
     console.log("selected Option...", sl);
@@ -100,24 +80,31 @@ const Landing = () => {
   };
   const handleCompile = () => {
     setProcessing(true);
-    let formData = {
-      lang: language.apiLanguage,
-      source: `${code}`,
-      memory_limit: 243232,
-      time_limit: 5,
-      input: customInput,
-      callback: "https://client.com/callback/",
+    const formData = {
+      language_id: language.id,
+      // encode source code in base64
+      source_code: btoa(code),
+      stdin: btoa(customInput),
     };
+    const options = {
+      method: "POST",
+      url: process.env.REACT_APP_RAPID_API_URL,
+      params: { base64_encoded: "true", fields: "*" },
+      headers: {
+        "content-type": "application/json",
+        "Content-Type": "application/json",
+        "X-RapidAPI-Host": process.env.REACT_APP_RAPID_API_HOST,
+        "X-RapidAPI-Key": process.env.REACT_APP_RAPID_API_KEY,
+      },
+      data: formData,
+    };
+
     axios
-      .post(HACKEREARTH_API, formData, {
-        headers: {
-          "Content-Type": "application/json",
-          "client-secret": `${process.env.REACT_APP_HACKEREARTH_CLIENT_SECRET}`,
-        },
-      })
-      .then((res) => {
-        console.log("res.data", res.data);
-        checkStatus(res.data);
+      .request(options)
+      .then(function (response) {
+        console.log("res.data", response.data);
+        const token = response.data.token;
+        checkStatus(token);
       })
       .catch((err) => {
         let error = err.response ? err.response.data : err;
@@ -126,70 +113,38 @@ const Landing = () => {
       });
   };
 
-  const checkStatus = async (responseData) => {
-    let status = responseData?.request_status?.code;
-    let statusAPI = responseData?.status_update_url;
-    if (status === REQUEST_STATUSES.REQUEST_COMPLETED) {
-      console.log("code executed...", responseData);
-      setOutputDetails(responseData?.result);
-      readFile(responseData?.result?.run_status?.output);
-      setProcessing(false);
-      showSuccessToast();
-      return;
-    } else if (status === REQUEST_STATUSES.CODE_COMPILED) {
-      console.log("code compiled...", responseData);
-      let compileStatus = responseData?.result?.compile_status;
-      if (compileStatus !== "OK") {
-        // throw error
-        setOutputDetails(responseData?.result);
+  const checkStatus = async (token) => {
+    const options = {
+      method: "GET",
+      url: process.env.REACT_APP_RAPID_API_URL + "/" + token,
+      params: { base64_encoded: "true", fields: "*" },
+      headers: {
+        "X-RapidAPI-Host": process.env.REACT_APP_RAPID_API_HOST,
+        "X-RapidAPI-Key": process.env.REACT_APP_RAPID_API_KEY,
+      },
+    };
+    try {
+      let response = await axios.request(options);
+      let statusId = response.data.status?.id;
+
+      // Processed - we have a result
+      if (statusId !== 1 || statusId !== 2) {
         setProcessing(false);
+        setOutputDetails(response.data);
+        showSuccessToast();
+        console.log("response.data", response.data);
         return;
       } else {
+        // still processing
         setTimeout(() => {
-          pingStatusAPI(statusAPI);
-        }, 1000);
+          checkStatus(token);
+        }, 2000);
       }
-    } else if (status === REQUEST_STATUSES.REQUEST_FAILED) {
-      console.log("code failed...", responseData);
+    } catch (err) {
+      console.log("err", err);
       setProcessing(false);
-      return;
-    } else {
-      setTimeout(() => {
-        pingStatusAPI(statusAPI);
-      }, 1000);
+      showErrorToast();
     }
-  };
-
-  const pingStatusAPI = (statusAPI) => {
-    axios
-      .get(statusAPI, {
-        headers: {
-          "Content-Type": "application/json",
-          "client-secret": `${process.env.REACT_APP_HACKEREARTH_CLIENT_SECRET}`,
-        },
-      })
-      .then((res) => {
-        console.log("res.data", res.data);
-        checkStatus(res.data);
-      })
-      .catch((err) => {
-        let error = err.response ? err.response.data : err;
-        setProcessing(false);
-        console.log(error);
-      });
-  };
-
-  const readFile = (fileUrl) => {
-    axios
-      .get(fileUrl)
-      .then((res) => {
-        console.log("output...", res.data);
-        setOutput(res.data);
-      })
-      .catch((err) => {
-        let error = err.response ? err.response.data : err;
-        console.log(error);
-      });
   };
 
   function handleThemeChange(th) {
@@ -218,6 +173,50 @@ const Landing = () => {
       draggable: true,
       progress: undefined,
     });
+  };
+  const showErrorToast = (msg) => {
+    toast.error(msg || `Something went wrong! Please try again.`, {
+      position: "top-right",
+      autoClose: 1000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
+  };
+
+  const getOutput = () => {
+    let statusId = outputDetails?.status?.id;
+
+    if (statusId === 6) {
+      // compilation error
+      return (
+        <pre className="px-2 py-1 font-normal text-xs text-red-500">
+          {atob(outputDetails?.compile_output)}
+        </pre>
+      );
+    } else if (statusId === 3) {
+      return (
+        <pre className="px-2 py-1 font-normal text-xs text-green-500">
+          {atob(outputDetails.stdout) !== null
+            ? `${atob(outputDetails.stdout)}`
+            : null}
+        </pre>
+      );
+    } else if (statusId === 5) {
+      return (
+        <pre className="px-2 py-1 font-normal text-xs text-red-500">
+          {`Time Limit Exceeded`}
+        </pre>
+      );
+    } else {
+      return (
+        <pre className="px-2 py-1 font-normal text-xs text-red-500">
+          {atob(outputDetails?.stderr)}
+        </pre>
+      );
+    }
   };
 
   return (
@@ -276,20 +275,7 @@ const Landing = () => {
             Output
           </h1>
           <div className="w-full h-56 bg-[#1e293b] rounded-md text-white font-normal text-sm overflow-y-auto">
-            {outputDetails ? (
-              <>
-                {outputDetails?.run_status?.status !== COMPILE_STATUSES.AC ? (
-                  <pre className="px-2 py-1 font-normal text-xs text-red-500">
-                    {outputDetails?.run_status?.stderr ||
-                      outputDetails?.compile_status}
-                  </pre>
-                ) : (
-                  <pre className="px-2 py-1 font-normal text-xs text-green-500">
-                    {`${output}`}
-                  </pre>
-                )}
-              </>
-            ) : null}
+            {outputDetails ? <>{getOutput()}</> : null}
           </div>
           <div className="flex flex-col items-end">
             <textarea
@@ -304,7 +290,7 @@ const Landing = () => {
               onClick={handleCompile}
               disabled={!code}
               className={classnames(
-                "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white mt-2 flex-shrink-0",
+                "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white flex-shrink-0",
                 !code ? "opacity-50" : ""
               )}
             >
@@ -312,39 +298,25 @@ const Landing = () => {
             </button>
           </div>
           {outputDetails && (
-            <div className="metrics-container mt-4 flex flex-col space-y-2">
-              <p className="text-sm">
-                Compile Status:{" "}
-                <span className="font-semibold px-2 py-1 rounded-md bg-gray-100">
-                  {outputDetails?.compile_status}
-                </span>
-              </p>
+            <div className="metrics-container mt-4 flex flex-col space-y-3">
               <p className="text-sm">
                 Status:{" "}
                 <span className="font-semibold px-2 py-1 rounded-md bg-gray-100">
-                  {outputDetails?.run_status?.status}
+                  {outputDetails?.status?.description}
                 </span>
               </p>
               <p className="text-sm">
                 Memory:{" "}
                 <span className="font-semibold px-2 py-1 rounded-md bg-gray-100">
-                  {outputDetails?.run_status?.memory_used}
+                  {outputDetails?.memory}
                 </span>
               </p>
               <p className="text-sm">
                 Time:{" "}
                 <span className="font-semibold px-2 py-1 rounded-md bg-gray-100">
-                  {outputDetails?.run_status?.time_used}
+                  {outputDetails?.time}
                 </span>
               </p>
-              {outputDetails?.run_status?.status !== COMPILE_STATUSES.AC ? (
-                <p className="text-sm">
-                  Status Detail:{" "}
-                  <span className="font-semibold px-2 py-1 rounded-md bg-gray-100">
-                    {outputDetails?.run_status?.status_detail}
-                  </span>
-                </p>
-              ) : null}
             </div>
           )}
         </div>
