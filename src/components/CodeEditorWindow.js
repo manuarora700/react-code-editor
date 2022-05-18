@@ -1,9 +1,6 @@
-import React, { useEffect, useState } from "react";
-import ReactDOM from "react-dom";
+import React, { useState } from "react";
 
 import Editor from "@monaco-editor/react";
-import monacoThemes from "monaco-themes/themes/themelist";
-import { defineTheme } from "../lib/defineTheme";
 
 const CodeEditorWindow = ({ onChange, language, code, theme }) => {
   const [value, setValue] = useState(code || "");

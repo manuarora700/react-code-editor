@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from "react";
-import Select from "react-select";
 import CodeEditorWindow from "./CodeEditorWindow";
 import axios from "axios";
 import { classnames } from "../utils/general";
 import { languageOptions } from "../constants/languageOptions";
-import { customStyles } from "../constants/customStyles";
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import monacoThemes from "monaco-themes/themes/themelist";
 import { defineTheme } from "../lib/defineTheme";
 import useKeyPress from "../hooks/useKeyPress";
 import Footer from "./Footer";
+import OutputWindow from "./OutputWindow";
+import CustomInput from "./CustomInput";
+import OutputDetails from "./OutputDetails";
+import ThemeDropdown from "./ThemeDropdown";
+import LanguagesDropdown from "./LanguagesDropdown";
 
 const javascriptDefault = `/**
 * Problem: Binary Search: Search a sorted array for a target value.
@@ -186,39 +188,6 @@ const Landing = () => {
     });
   };
 
-  const getOutput = () => {
-    let statusId = outputDetails?.status?.id;
-
-    if (statusId === 6) {
-      // compilation error
-      return (
-        <pre className="px-2 py-1 font-normal text-xs text-red-500">
-          {atob(outputDetails?.compile_output)}
-        </pre>
-      );
-    } else if (statusId === 3) {
-      return (
-        <pre className="px-2 py-1 font-normal text-xs text-green-500">
-          {atob(outputDetails.stdout) !== null
-            ? `${atob(outputDetails.stdout)}`
-            : null}
-        </pre>
-      );
-    } else if (statusId === 5) {
-      return (
-        <pre className="px-2 py-1 font-normal text-xs text-red-500">
-          {`Time Limit Exceeded`}
-        </pre>
-      );
-    } else {
-      return (
-        <pre className="px-2 py-1 font-normal text-xs text-red-500">
-          {atob(outputDetails?.stderr)}
-        </pre>
-      );
-    }
-  };
-
   return (
     <>
       <ToastContainer
@@ -235,29 +204,10 @@ const Landing = () => {
       <div className="h-4 w-full bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500"></div>
       <div className="flex flex-row">
         <div className="px-4 py-2">
-          <Select
-            placeholder={`Filter By Category`}
-            options={languageOptions}
-            styles={customStyles}
-            defaultValue={languageOptions[0]}
-            onChange={(selectedOption) => onSelectChange(selectedOption)}
-          />
+          <LanguagesDropdown onSelectChange={onSelectChange} />
         </div>
         <div className="px-4 py-2">
-          <Select
-            placeholder={`Select Theme`}
-            // options={languageOptions}
-            options={Object.entries(monacoThemes).map(
-              ([themeId, themeName]) => ({
-                label: themeName,
-                value: themeId,
-                key: themeId,
-              })
-            )}
-            value={theme}
-            styles={customStyles}
-            onChange={handleThemeChange}
-          />
+          <ThemeDropdown handleThemeChange={handleThemeChange} theme={theme} />
         </div>
       </div>
       <div className="flex flex-row space-x-4 items-start px-4 py-4">
@@ -271,21 +221,12 @@ const Landing = () => {
         </div>
 
         <div className="right-container flex flex-shrink-0 w-[30%] flex-col">
-          <h1 className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 mb-2">
-            Output
-          </h1>
-          <div className="w-full h-56 bg-[#1e293b] rounded-md text-white font-normal text-sm overflow-y-auto">
-            {outputDetails ? <>{getOutput()}</> : null}
-          </div>
+          <OutputWindow outputDetails={outputDetails} />
           <div className="flex flex-col items-end">
-            <textarea
-              rows="5"
-              onChange={(e) => setCustomInput(e.target.value)}
-              placeholder={`Custom input`}
-              className={classnames(
-                "focus:outline-none w-full border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white mt-2"
-              )}
-            ></textarea>
+            <CustomInput
+              customInput={customInput}
+              setCustomInput={setCustomInput}
+            />
             <button
               onClick={handleCompile}
               disabled={!code}
@@ -297,28 +238,7 @@ const Landing = () => {
               {processing ? "Processing..." : "Compile and Execute"}
             </button>
           </div>
-          {outputDetails && (
-            <div className="metrics-container mt-4 flex flex-col space-y-3">
-              <p className="text-sm">
-                Status:{" "}
-                <span className="font-semibold px-2 py-1 rounded-md bg-gray-100">
-                  {outputDetails?.status?.description}
-                </span>
-              </p>
-              <p className="text-sm">
-                Memory:{" "}
-                <span className="font-semibold px-2 py-1 rounded-md bg-gray-100">
-                  {outputDetails?.memory}
-                </span>
-              </p>
-              <p className="text-sm">
-                Time:{" "}
-                <span className="font-semibold px-2 py-1 rounded-md bg-gray-100">
-                  {outputDetails?.time}
-                </span>
-              </p>
-            </div>
-          )}
+          {outputDetails && <OutputDetails outputDetails={outputDetails} />}
         </div>
       </div>
       <Footer />
