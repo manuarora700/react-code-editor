@@ -130,7 +130,7 @@ const Landing = () => {
       let statusId = response.data.status?.id;
 
       // Processed - we have a result
-      if (statusId !== 1 || statusId !== 2) {
+      if (statusId !== 1 && statusId !== 2) {
         setProcessing(false);
         setOutputDetails(response.data);
         showSuccessToast();
