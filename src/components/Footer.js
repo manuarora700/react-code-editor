@@ -47,14 +47,15 @@ const Footer = () => {
         >
           GitHub.{" "}
         </a>
-        Hosted on{" "}
+        Read the complete blog on{" "}
         <a
-          href="https://vercel.com"
+          href="https://www.freecodecamp.org/news/how-to-build-react-based-code-editor/"
           target="__blank"
           className="text-gray-700  hover:bg-red-500 hover:text-white font-medium"
         >
-          Vercel
+          FreeCodeCamp
         </a>
+        .
       </span>
     </div>
   );

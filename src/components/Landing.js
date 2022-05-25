@@ -110,8 +110,19 @@ const Landing = () => {
       })
       .catch((err) => {
         let error = err.response ? err.response.data : err;
+        // get error status
+        let status = err.response.status;
+        console.log("status", status);
+        if (status === 429) {
+          console.log("too many requests", status);
+
+          showErrorToast(
+            `Quota of 100 requests exceeded for the Day! Please read the blog on freeCodeCamp to learn how to setup your own RAPID API Judge0!`,
+            10000
+          );
+        }
         setProcessing(false);
-        console.log(error);
+        console.log("catch block...", error);
       });
   };
 
@@ -130,17 +141,18 @@ const Landing = () => {
       let statusId = response.data.status?.id;
 
       // Processed - we have a result
-      if (statusId !== 1 && statusId !== 2) {
-        setProcessing(false);
-        setOutputDetails(response.data);
-        showSuccessToast();
-        console.log("response.data", response.data);
-        return;
-      } else {
+      if (statusId === 1 || statusId === 2) {
         // still processing
         setTimeout(() => {
           checkStatus(token);
         }, 2000);
+        return;
+      } else {
+        setProcessing(false);
+        setOutputDetails(response.data);
+        showSuccessToast(`Compiled Successfully!`);
+        console.log("response.data", response.data);
+        return;
       }
     } catch (err) {
       console.log("err", err);
@@ -176,10 +188,10 @@ const Landing = () => {
       progress: undefined,
     });
   };
-  const showErrorToast = (msg) => {
+  const showErrorToast = (msg, timer) => {
     toast.error(msg || `Something went wrong! Please try again.`, {
       position: "top-right",
-      autoClose: 1000,
+      autoClose: timer ? timer : 1000,
       hideProgressBar: false,
       closeOnClick: true,
       pauseOnHover: true,
