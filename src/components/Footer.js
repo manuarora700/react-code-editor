@@ -39,7 +39,7 @@ const Footer = () => {
         >
           Manu Arora.{" "}
         </a>
-        Source code at{" "}
+        Code at{" "}
         <a
           href="https://github.com/manuarora700/react-code-editor"
           target="__blank"
@@ -47,7 +47,7 @@ const Footer = () => {
         >
           GitHub.{" "}
         </a>
-        Read the complete blog on{" "}
+        Blog on{" "}
         <a
           href="https://www.freecodecamp.org/news/how-to-build-react-based-code-editor/"
           target="__blank"
@@ -55,7 +55,15 @@ const Footer = () => {
         >
           FreeCodeCamp
         </a>
-        .
+        . Visit{" "}
+        <a
+          href="https://algochurn.com"
+          target="__blank"
+          className="text-gray-700  hover:bg-red-500 hover:text-white font-medium"
+        >
+          Algochurn{" "}
+        </a>
+        to ace your next frontend interview.
       </span>
     </div>
   );
