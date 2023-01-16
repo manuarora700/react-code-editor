@@ -4,9 +4,12 @@ import { classnames } from "../utils/general";
 const CustomInput = ({ customInput, setCustomInput }) => {
   return (
     <>
-      {" "}
+      {/* {" "} */}
+      <h1 className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 mb-2">
+        Custom Input
+      </h1>
       <textarea
-        rows="5"
+        rows="8"
         value={customInput}
         onChange={(e) => setCustomInput(e.target.value)}
         placeholder={`Custom input`}

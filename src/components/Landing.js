@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { Fragment, useContext, useEffect, useState, useCallback } from "react";
 import CodeEditorWindow from "./CodeEditorWindow";
 import axios from "axios";
 import { classnames } from "../utils/general";
@@ -15,6 +15,11 @@ import CustomInput from "./CustomInput";
 import OutputDetails from "./OutputDetails";
 import ThemeDropdown from "./ThemeDropdown";
 import LanguagesDropdown from "./LanguagesDropdown";
+
+import AuthenticationView from "./authentication/AuthenticationView"
+import Submission from "./submissions";
+import { useSaveSubmission } from "../hooks/useSaveSubmission";
+import { AuthContext } from "../contexts/AuthContext";
 
 const javascriptDefault = `/**
 * Problem: Binary Search: Search a sorted array for a target value.
@@ -47,20 +52,29 @@ console.log(binarySearch(arr, target));
 `;
 
 const Landing = () => {
+  const { user, selectedSubmission } = useContext(AuthContext);
   const [code, setCode] = useState(javascriptDefault);
   const [customInput, setCustomInput] = useState("");
   const [outputDetails, setOutputDetails] = useState(null);
   const [processing, setProcessing] = useState(null);
   const [theme, setTheme] = useState("cobalt");
   const [language, setLanguage] = useState(languageOptions[0]);
+  const [title, setTitle] = useState('');
+  const [showSaveSection, setShowSaveSection] = useState(false)
 
   const enterPress = useKeyPress("Enter");
   const ctrlPress = useKeyPress("Control");
+  const { isSubmitting, submit, error} = useSaveSubmission();
 
   const onSelectChange = (sl) => {
     console.log("selected Option...", sl);
     setLanguage(sl);
   };
+
+  // const onSelectChange = useCallback((newValue) => {
+  //   console.log("selected Option...", newValue);
+  //   setLanguage(newValue);
+  // }, [])
 
   useEffect(() => {
     if (enterPress && ctrlPress) {
@@ -69,6 +83,7 @@ const Landing = () => {
       handleCompile();
     }
   }, [ctrlPress, enterPress]);
+
   const onChange = (action, data) => {
     switch (action) {
       case "code": {
@@ -80,6 +95,7 @@ const Landing = () => {
       }
     }
   };
+
   const handleCompile = () => {
     setProcessing(true);
     const formData = {
@@ -171,6 +187,7 @@ const Landing = () => {
       defineTheme(theme.value).then((_) => setTheme(theme));
     }
   }
+
   useEffect(() => {
     defineTheme("oceanic-next").then((_) =>
       setTheme({ value: "oceanic-next", label: "Oceanic Next" })
@@ -188,6 +205,7 @@ const Landing = () => {
       progress: undefined,
     });
   };
+
   const showErrorToast = (msg, timer) => {
     toast.error(msg || `Something went wrong! Please try again.`, {
       position: "top-right",
@@ -199,6 +217,40 @@ const Landing = () => {
       progress: undefined,
     });
   };
+
+  const handleSave = () => {
+    const submission = {
+      uId: user.uid,
+      code: code,
+      languageId: language,
+      title: title
+    }
+
+    submit(submission)
+
+    if (error) {
+      showErrorToast(error, 5000)
+    } else {
+      showSuccessToast("Successfully saved your code")
+    }
+  }
+
+  const handleChangeTitle = (event) => {
+    setTitle(event.target.value)
+  }
+
+  const toggleSaveCode = () => {
+    setShowSaveSection(!showSaveSection)
+  }
+
+  useEffect(() => {
+    console.log(selectedSubmission)
+    if (selectedSubmission) {
+      const language = languageOptions.find(language => language.id === selectedSubmission.languageId);
+      setLanguage(language);
+      setCode(selectedSubmission.code)
+    }
+  }, [selectedSubmission])
 
   return (
     <>
@@ -246,42 +298,77 @@ const Landing = () => {
       <div className="h-4 w-full bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500"></div>
       <div className="flex flex-row">
         <div className="px-4 py-2">
-          <LanguagesDropdown onSelectChange={onSelectChange} />
+          <LanguagesDropdown onSelectChange={onSelectChange} key={language} selected={language} />
         </div>
         <div className="px-4 py-2">
           <ThemeDropdown handleThemeChange={handleThemeChange} theme={theme} />
         </div>
+        <div className="px-4 py-2 ml-auto authDiv">
+          <AuthenticationView />
+        </div>
       </div>
       <div className="flex flex-row space-x-4 items-start px-4 py-4">
-        <div className="flex flex-col w-full h-full justify-start items-end">
-          <CodeEditorWindow
-            code={code}
-            onChange={onChange}
-            language={language?.value}
-            theme={theme.value}
-          />
+        <div className="flex flex-col w-full h-[50%] justify-start items-end">
+          <div className="flex w-full">
+            <div className="w-[80%]">
+              <CodeEditorWindow
+              key={code}
+                code={code}
+                onChange={onChange}
+                language={language?.value}
+                theme={theme.value}
+              />
+            </div>
+            <div className="w-[20%] px-4">
+              <button
+                onClick={handleCompile}
+                disabled={!code}
+                className={classnames(
+                  "mb-5 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white flex-shrink-0",
+                  !code ? "opacity-50" : ""
+                )}
+              >
+                {processing ? "Processing..." : "Compile and Execute"}
+              </button>
+              {outputDetails && <OutputDetails outputDetails={outputDetails} />}
+              <br/>
+              {user &&
+              <a role="button" onClick={toggleSaveCode} className="">Save Code?</a>}
+              {showSaveSection &&
+              <Fragment>
+                <input type="text" class="form-control mt-2 shadow-[5px_5px_0px_0px_rgba(0,0,0)]" placeholder="title" onChange={handleChangeTitle} />
+                <button
+                  onClick={handleSave}
+                  className={classnames(
+                    "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white flex-shrink-0",
+                    !code ? "opacity-50" : ""
+                  )}>
+                    {isSubmitting ? "Saving...": "Save"}
+                </button>
+              </Fragment>}
+            </div>
+          </div>
+          
+          <div className="flex flex-row w-full">
+            <div className="w-50 py-2">
+              <CustomInput
+                customInput={customInput}
+                setCustomInput={setCustomInput}
+              />
+            </div>
+            <div className="w-50 px-4 py-2">
+              <OutputWindow outputDetails={outputDetails} />
+            </div>
+          </div>
+          
         </div>
 
+        {user &&
         <div className="right-container flex flex-shrink-0 w-[30%] flex-col">
-          <OutputWindow outputDetails={outputDetails} />
           <div className="flex flex-col items-end">
-            <CustomInput
-              customInput={customInput}
-              setCustomInput={setCustomInput}
-            />
-            <button
-              onClick={handleCompile}
-              disabled={!code}
-              className={classnames(
-                "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white flex-shrink-0",
-                !code ? "opacity-50" : ""
-              )}
-            >
-              {processing ? "Processing..." : "Compile and Execute"}
-            </button>
+            <Submission />
           </div>
-          {outputDetails && <OutputDetails outputDetails={outputDetails} />}
-        </div>
+        </div>}
       </div>
       <Footer />
     </>
