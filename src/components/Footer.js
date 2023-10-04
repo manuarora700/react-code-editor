@@ -2,7 +2,7 @@ import React from "react";
 
 const Footer = () => {
   return (
-    <div className="fixed h-8 bottom-0 px-2 py-1 flex items-center justify-center w-full text-xs text-gray-500 ">
+    <div className="h-8 bottom-0 px-2 py-1 flex items-left justify-center w-full text-xs text-gray-200 " style={{fontSize:'large'}}>
       <span>
         Built with{" "}
         <svg

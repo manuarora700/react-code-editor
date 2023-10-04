@@ -5,26 +5,21 @@ export const customStyles = {
     maxWidth: "14rem",
     minWidth: "12rem",
     borderRadius: "5px",
-    color: "#000",
+    color: "0000",
     fontSize: "0.8rem",
     lineHeight: "1.75rem",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '0000000',
     cursor: "pointer",
     border: "2px solid #000000",
-    boxShadow: "5px 5px 0px 0px rgba(0,0,0);",
-    ":hover": {
-      border: "2px solid #000000",
-      boxShadow: "none",
-    },
   }),
   option: (styles) => {
     return {
       ...styles,
-      color: "#000",
+      color: "#fff",
       fontSize: "0.8rem",
       lineHeight: "1.75rem",
       width: "100%",
-      background: "#fff",
+      background: '#111111',
       ":hover": {
         backgroundColor: "rgb(243 244 246)",
         color: "#000",
@@ -35,18 +30,17 @@ export const customStyles = {
   menu: (styles) => {
     return {
       ...styles,
-      backgroundColor: "#fff",
+      backgroundColor: '#111111',
       maxWidth: "14rem",
       border: "2px solid #000000",
       borderRadius: "5px",
-      boxShadow: "5px 5px 0px 0px rgba(0,0,0);",
     };
   },
 
   placeholder: (defaultStyles) => {
     return {
       ...defaultStyles,
-      color: "#000",
+      color: "#fff",
       fontSize: "0.8rem",
       lineHeight: "1.75rem",
     };

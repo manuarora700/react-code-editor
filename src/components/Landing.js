@@ -9,12 +9,13 @@ import "react-toastify/dist/ReactToastify.css";
 
 import { defineTheme } from "../lib/defineTheme";
 import useKeyPress from "../hooks/useKeyPress";
-import Footer from "./Footer";
 import OutputWindow from "./OutputWindow";
 import CustomInput from "./CustomInput";
 import OutputDetails from "./OutputDetails";
 import ThemeDropdown from "./ThemeDropdown";
 import LanguagesDropdown from "./LanguagesDropdown";
+import Quote from "./Quote";
+import Credits from "./Credits";
 
 const javascriptDefault = `/**
 * Problem: Binary Search: Search a sorted array for a target value.
@@ -242,17 +243,15 @@ const Landing = () => {
           ></path>
         </svg>
       </a>
-
-      <div className="h-4 w-full bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500"></div>
       <div className="flex flex-row">
-        <div className="px-4 py-2">
+        <div className="pl-4 pr-0 pt-8 pb-0">
           <LanguagesDropdown onSelectChange={onSelectChange} />
         </div>
-        <div className="px-4 py-2">
+        <div className="pl-0 pr-0 pt-8 pb-0">
           <ThemeDropdown handleThemeChange={handleThemeChange} theme={theme} />
         </div>
       </div>
-      <div className="flex flex-row space-x-4 items-start px-4 py-4">
+      <div className="flex flex-col space-x-4 items-start px-4">
         <div className="flex flex-col w-full h-full justify-start items-end">
           <CodeEditorWindow
             code={code}
@@ -262,28 +261,31 @@ const Landing = () => {
           />
         </div>
 
-        <div className="right-container flex flex-shrink-0 w-[30%] flex-col">
-          <OutputWindow outputDetails={outputDetails} />
-          <div className="flex flex-col items-end">
+        <div style={{display:"flex",flexDirection:'row',justifyContent:'space-between'}}>
+          <div>
             <CustomInput
               customInput={customInput}
               setCustomInput={setCustomInput}
             />
-            <button
+          </div>
+          <div>
+            <OutputWindow outputDetails={outputDetails} />
+          </div>
+        </div>
+        {processing ? <Quote />:null}
+        {!processing && outputDetails && <OutputDetails outputDetails={outputDetails} />}
+        <button
               onClick={handleCompile}
               disabled={!code}
               className={classnames(
-                "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white flex-shrink-0",
+                "mt-4 border-2 border-black z-10 rounded-md px-4 py-2 bg-black text-white flex-shrink-0",
                 !code ? "opacity-50" : ""
               )}
             >
               {processing ? "Processing..." : "Compile and Execute"}
             </button>
-          </div>
-          {outputDetails && <OutputDetails outputDetails={outputDetails} />}
-        </div>
       </div>
-      <Footer />
+      <Credits />
     </>
   );
 };
