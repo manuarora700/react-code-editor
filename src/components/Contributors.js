@@ -17,10 +17,10 @@ const Contributors = ({ repo }) => {
 
   return (
     <div>
-      <h2 style={{margin:'0 0 0 15px',color:'white',fontSize:'large'}}>Contributors <span style={{color:'red'}}>&#x2764;</span></h2>
-      <div  style={{margin:'5px 10px 10px 5px',display:'flex',flexDirection:'row',justifyContent:'left'}} >
+      <h2 className='m-0 ml-4 text-white text-lg'>Contributors <span className='text-red-500'>&#x2764;</span></h2>
+      <div  className='m-1 mt-2 ml-1 flex flex-row justify-start' >
         {contributors.map((contributor) => ( 
-          <a href={contributor.html_url} target='_blank' style={{margin:'0 10px 0 10px'}}>
+          <a href={contributor.html_url} target='_blank' className='mx-3'>
           <img src={contributor.avatar_url} alt={contributor.login}width="40" height="40"  />
           </a> 
       ))}
